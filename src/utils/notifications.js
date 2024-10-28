@@ -2,35 +2,40 @@
 import notifier from 'node-notifier';
 import path from 'path';
 import chalk from 'chalk';
+import fs from 'fs';
+import { loadConfig } from '../config/config.js';
+
+const config = loadConfig();
 
 export function sendNotification(message, type = 'info') {
     let title = 'Coding Assistant';
-    let icon;
+    let iconPath;
 
-    switch (type) {
+    // Define icons based on notification type
+    switch(type) {
         case 'success':
-            icon = path.join(__dirname, '..', 'assets', 'success.png'); // Ensure you have an icon
+            iconPath = path.join('src', 'utils', 'assets', 'success.png');
             break;
         case 'error':
-            icon = path.join(__dirname, '..', 'assets', 'error.png'); // Ensure you have an icon
+            iconPath = path.join('src', 'utils', 'assets', 'error.png');
             break;
         case 'warning':
-            icon = path.join(__dirname, '..', 'assets', 'warning.png'); // Ensure you have an icon
+            iconPath = path.join('src', 'utils', 'assets', 'warning.png');
             break;
         default:
-            icon = path.join(__dirname, '..', 'assets', 'info.png'); // Ensure you have an icon
+            iconPath = path.join('src', 'utils', 'assets', 'info.png');
     }
 
     notifier.notify({
         title: title,
         message: message,
-        icon: icon, // Absolute path (doesn't work on balloons)
-        sound: true, // Only Notification Center or Windows Toasters
-        wait: false, // Do not wait for user action
+        icon: fs.existsSync(iconPath) ? iconPath : undefined, // Use icon if it exists
+        sound: true,
+        wait: false
     });
 
     // Also log to console with colors
-    switch (type) {
+    switch(type) {
         case 'success':
             console.log(chalk.green(`[SUCCESS] ${message}`));
             break;

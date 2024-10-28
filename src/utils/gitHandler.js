@@ -3,14 +3,14 @@ import inquirer from 'inquirer';
 import { execSync } from 'child_process';
 import { logAction, logError } from './logger.js';
 import { sendNotification } from './notifications.js';
+import { loadConfig } from '../config/config.js';
+
+const config = loadConfig();
 
 export async function handleGitOperations(config, prompt) {
     try {
         // Commit Changes
-        const commitMessage = generateCommitMessage(
-            config.gitPreferences.commitMessageFormat,
-            prompt
-        );
+        const commitMessage = generateCommitMessage(config.gitPreferences.commitMessageFormat, prompt);
         execSync(`git add .`);
         execSync(`git commit -m "${commitMessage}"`);
         logAction(`Committed changes with message: "${commitMessage}"`);
@@ -18,15 +18,10 @@ export async function handleGitOperations(config, prompt) {
 
         // Push Changes if autoPush is enabled
         if (config.gitPreferences.autoPush) {
-            const currentBranch = execSync('git rev-parse --abbrev-ref HEAD')
-                .toString()
-                .trim();
+            const currentBranch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim();
             execSync(`git push origin ${currentBranch}`);
-            logAction(`Pushed changes to branch: ${currentBranch}`);
-            sendNotification(
-                `Pushed changes to branch: "${currentBranch}"`,
-                'success'
-            );
+            logAction(`Pushed changes to branch: "${currentBranch}"`);
+            sendNotification(`Pushed changes to branch: "${currentBranch}"`, 'success');
         }
     } catch (error) {
         logError(`Git operation failed: ${error.message}`);
@@ -38,7 +33,11 @@ export async function handleGitOperations(config, prompt) {
                 type: 'list',
                 name: 'action',
                 message: 'Git operation failed. What would you like to do?',
-                choices: ['Retry Commit', 'View Error Details', 'Abort'],
+                choices: [
+                    'Retry Commit',
+                    'View Error Details',
+                    'Abort',
+                ],
             },
         ]);
 
@@ -48,10 +47,7 @@ export async function handleGitOperations(config, prompt) {
                 break;
             case 'View Error Details':
                 console.error(error.stack);
-                sendNotification(
-                    `Git Error Details: ${error.message}`,
-                    'error'
-                );
+                sendNotification(`Git Error Details: ${error.message}`, 'error');
                 await handleGitOperations(config, prompt);
                 break;
             case 'Abort':

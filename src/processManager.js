@@ -8,16 +8,20 @@ import {
     trackApiUsage,
     trackAccuracy,
     logMetrics,
+    resetMetrics,
 } from './assistants/statsTracker.js';
 import { awaitApproval } from './utils/approval.js';
 import { logAction, logError } from './utils/logger.js';
 import { handleGitOperations } from './utils/gitHandler.js';
 import { sendNotification } from './utils/notifications.js';
-import config from './config/codePreferences.json' assert { type: 'json' };
+import { loadConfig } from './config/config.js';
 
-export async function startProcess(prompt, config) {
+const config = loadConfig();
+
+export async function startProcess(prompt) {
     try {
-        logAction(`Starting process for prompt: ${prompt}`);
+        resetMetrics();
+        logAction(`Starting process for prompt: "${prompt}"`);
         sendNotification(`Starting process for prompt: "${prompt}"`, 'info');
 
         // Step 1: Create a new Git branch if needed
@@ -31,45 +35,39 @@ export async function startProcess(prompt, config) {
                 },
             ]);
             execSync(`git checkout -b ${branchName}`);
-            logAction(`Created and switched to branch: ${branchName}`);
-            sendNotification(
-                `Created and switched to branch: "${branchName}"`,
-                'success'
-            );
+            logAction(`Created and switched to branch: "${branchName}"`);
+            sendNotification(`Created and switched to branch: "${branchName}"`, 'success');
         }
 
         // Step 2: Generate Initial Code
-        const initialCode = await generateInitialCode(prompt, config);
-        const filename = 'generatedCode.js'; // Customize based on the prompt
+        const initialCode = await generateInitialCode(prompt);
+        const filename = config.filePreferences.filename || 'generatedCode.js';
         writeToFile(filename, initialCode);
-        logAction(`Initial code generated and written to ${filename}`);
-        sendNotification(
-            `Initial code generated and written to ${filename}`,
-            'success'
-        );
+        logAction(`Initial code generated and written to "${filename}"`);
+        sendNotification(`Initial code generated and written to "${filename}"`, 'success');
         trackApiUsage(initialCode.length);
 
         // Step 3: Run Tests
-        let testResults = await runTests(config);
+        let testResults = await runTests();
 
         // Step 4: Refinement Loop
         while (!testResults.success) {
-            logAction(`Tests failed. Refining code...`);
-            sendNotification(`Tests failed. Refining code...`, 'warning');
+            logAction('Tests failed. Initiating code refinement...');
+            sendNotification('Tests failed. Refining code...', 'warning');
 
             const refinementPrompt = `Refine the following code to fix the failing tests:\n\n${initialCode}`;
-            const refinedCode = await refineCode(refinementPrompt, config);
+            const refinedCode = await refineCode(refinementPrompt, initialCode);
             writeToFile(filename, refinedCode);
+            logAction(`Code refined and written to "${filename}"`);
+            sendNotification(`Code refined and written to "${filename}"`, 'info');
             trackApiUsage(refinedCode.length);
-            logAction(`Code refined and written to ${filename}`);
-            sendNotification(`Code refined and written to ${filename}`, 'info');
 
-            // Re-run tests
-            testResults = await runTests(config);
+            // Re-run tests after refinement
+            testResults = await runTests();
             trackAccuracy(testResults.passed, testResults.total);
         }
 
-        logAction('All tests passed!');
+        logAction('All tests passed successfully!');
         sendNotification('All tests passed successfully!', 'success');
         logMetrics();
 
@@ -79,16 +77,14 @@ export async function startProcess(prompt, config) {
         );
         if (approved) {
             logAction('User approved the code.');
-            sendNotification(
-                'User approved the code. Committing changes...',
-                'info'
-            );
+            sendNotification('User approved the code. Committing changes...', 'info');
             // Commit and push changes
             await handleGitOperations(config, prompt);
+            sendNotification('Changes have been committed and pushed successfully!', 'success');
         } else {
             logAction('User requested further changes.');
             sendNotification('User requested further changes.', 'warning');
-            // Optionally handle further changes
+            // Optionally handle further changes or loop back
         }
     } catch (error) {
         logError(`Error in startProcess: ${error.message}`);
@@ -107,12 +103,12 @@ export async function startProcess(prompt, config) {
 
         switch (action) {
             case 'Retry':
-                await startProcess(prompt, config);
+                await startProcess(prompt);
                 break;
             case 'View Error Details':
                 console.error(error.stack);
                 sendNotification(`Error Details: ${error.message}`, 'error');
-                await startProcess(prompt, config);
+                await startProcess(prompt);
                 break;
             case 'Abort':
                 console.log('Process aborted.');

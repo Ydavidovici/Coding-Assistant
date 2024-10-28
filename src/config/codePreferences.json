@@ -5,7 +5,7 @@
         "classNaming": "PascalCase",
         "comments": {
             "functionComments": "JSDoc",
-            "apiDocumentation": "JSDoc" // Changed from Swagger as per previous conversation
+            "apiDocumentation": "JSDoc"
         }
     },
     "prettierPreferences": {
