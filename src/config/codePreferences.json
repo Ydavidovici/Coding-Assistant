@@ -1,0 +1,32 @@
+{
+  "stylePreferences": {
+    "indentation": "4 spaces",
+    "variableNaming": "camelCase",
+    "classNaming": "PascalCase",
+    "comments": {
+      "functionComments": "JSDoc",
+      "apiDocumentation": "Swagger"
+    }
+  },
+  "errorHandling": {
+    "approach": "centralized",
+    "logging": "include logging for error handling"
+  },
+  "performanceOptimization": {
+    "strategy": "situational",
+    "techniques": ["caching", "lazy loading", "loop optimization"]
+  },
+  "codeModularity": {
+    "approach": "small, single-purpose functions"
+  },
+  "testing": {
+    "unitTests": "important logic like CRUD functionality",
+    "integrationTests": "ensure the app works as expected"
+  },
+  "loggingAndMetrics": {
+    "type": "structured",
+    "library": "Winston",
+    "usageTracking": true,
+    "metrics": ["API usage", "code accuracy", "execution time"]
+  }
+}
