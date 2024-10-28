@@ -28,5 +28,11 @@
     "library": "Winston",
     "usageTracking": true,
     "metrics": ["API usage", "code accuracy", "execution time"]
+  },
+  "gitPreferences": {
+    "branching": "new branch for new features",
+    "commitMessageFormat": "feature: [description] for new features, fix: [description] for bug fixes",
+    "autoCommit": true,
+    "autoPush": true
   }
 }

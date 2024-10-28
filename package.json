@@ -8,8 +8,11 @@
     "test": "jest",
     "doc": "jsdoc -c jsdoc.json",
     "audit": "npm audit",
-    "fix-audit": "npm audit fix"
-  },
+    "fix-audit": "npm audit fix",
+    "create-branch": "git checkout -b $(node -p 'require(\"./codePreferences.json\").gitPreferences.branching ? \"feature/$(date +%Y-%m-%d)\" : \"main\"')",
+    "commit-changes": "git add . && git commit -m \"$(node -p 'require(\"./codePreferences.json\").gitPreferences.commitMessageFormat.replace(\"[description]\", process.argv[2] || \"update\")')\"",
+    "push-changes": "git push origin $(git rev-parse --abbrev-ref HEAD)",
+    },
   "dependencies": {
     "axios": "^1.7.7",
     "chalk": "^4.1.2",
